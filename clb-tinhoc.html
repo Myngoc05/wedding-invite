@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CLB Tin Học — Định Hướng Hoạt Động</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;}
+
+#canvas-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;}
+
+/* ── OVERLAY SECTIONS ── */
+.scene{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:10;opacity:0;pointer-events:none;
+  transition:none;
+}
+.scene.active{opacity:1;pointer-events:all;}
+
+/* ── FLASH ── */
+#flash{
+  position:fixed;inset:0;z-index:999;pointer-events:none;
+  background:radial-gradient(circle,#ffffff 0%,transparent 70%);
+  opacity:0;
+}
+
+/* ── LIGHTNING ── */
+#lightning-canvas{position:fixed;inset:0;z-index:5;pointer-events:none;}
+
+/* ── SCENE 0: INTRO ── */
+#s0 .hero-logo{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(28px,6vw,72px);
+  font-weight:900;
+  color:#fff;
+  text-align:center;
+  letter-spacing:8px;
+  text-shadow:0 0 30px #00ffff,0 0 60px #00ffff55;
+  line-height:1.2;
+}
+#s0 .hero-sub{
+  font-family:'Rajdhani',sans-serif;
+  font-size:clamp(14px,2vw,22px);
+  color:#00ffff99;
+  letter-spacing:6px;
+  margin-top:12px;
+  text-align:center;
+}
+#s0 .start-btn{
+  margin-top:44px;
+  padding:14px 48px;
+  font-family:'Orbitron',monospace;
+  font-size:13px;
+  letter-spacing:4px;
+  color:#00ffff;
+  background:transparent;
+  border:1.5px solid #00ffff88;
+  border-radius:40px;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+  transition:all 0.3s;
+  box-shadow:0 0 20px #00ffff33;
+}
+#s0 .start-btn:hover{
+  background:#00ffff22;
+  box-shadow:0 0 40px #00ffff66,inset 0 0 20px #00ffff11;
+  transform:scale(1.05);
+}
+#s0 .start-btn::after{
+  content:'';position:absolute;top:-50%;left:-60%;
+  width:50%;height:200%;
+  background:linear-gradient(90deg,transparent,#00ffff33,transparent);
+  transform:skewX(-20deg);
+  animation:btnShine 3s infinite;
+}
+@keyframes btnShine{0%{left:-60%}100%{left:160%}}
+
+/* ── NAVIGATION DOTS ── */
+#nav-dots{
+  position:fixed;right:28px;top:50%;transform:translateY(-50%);
+  z-index:50;display:flex;flex-direction:column;gap:12px;
+}
+.ndot{
+  width:10px;height:10px;border-radius:50%;
+  background:#ffffff22;border:1.5px solid #ffffff44;
+  cursor:pointer;transition:all 0.3s;
+}
+.ndot.active{
+  background:#00ffff;
+  box-shadow:0 0 12px #00ffff,0 0 24px #00ffff55;
+  transform:scale(1.4);
+}
+
+/* ── SECTION CARDS ── */
+.scene-card{
+  background:rgba(0,20,40,0.72);
+  border:1px solid rgba(0,255,255,0.2);
+  border-radius:20px;
+  padding:clamp(20px,4vw,48px);
+  max-width:min(760px,90vw);
+  width:100%;
+  backdrop-filter:blur(20px);
+  box-shadow:0 0 60px rgba(0,255,255,0.08),inset 0 1px 0 rgba(0,255,255,0.1);
+  position:relative;overflow:hidden;
+}
+.scene-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,#00ffff88,transparent);
+}
+
+.section-badge{
+  display:inline-block;
+  font-family:'Orbitron',monospace;
+  font-size:9px;letter-spacing:5px;
+  color:#00ffff;padding:4px 14px;
+  border:1px solid #00ffff44;border-radius:20px;
+  margin-bottom:16px;
+  background:#00ffff11;
+}
+.section-title{
+  font-family:'Orbitron',monospace;
+  font-size:clamp(18px,3vw,32px);
+  font-weight:900;color:#fff;
+  line-height:1.2;margin-bottom:8px;
+  text-shadow:0 0 20px #00ffff55;
+}
+.section-sub{
+  font-family:'Rajdhani',sans-serif;
+  font-size:clamp(12px,1.5vw,16px);
+  color:#88bbcc;letter-spacing:2px;
+  margin-bottom:24px;
+}
+.divider{height:1px;background:linear-gradient(90deg,#00ffff44,transparent);margin-bottom:20px;}
+
+.info-grid{display:grid;gap:12px;}
+.info-grid.two-col{grid-template-columns:1fr 1fr;}
+@media(max-width:600px){.info-grid.two-col{grid-template-columns:1fr;}}
+
+.info-item{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 16px;
+  background:rgba(0,255,255,0.04);
+  border:1px solid rgba(0,255,255,0.12);
+  border-radius:10px;
+  transition:all 0.3s;
+}
+.info-item:hover{
+  background:rgba(0,255,255,0.09);
+  border-color:rgba(0,255,255,0.3);
+  transform:translateX(4px);
+}
+.info-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#00ffff;flex-shrink:0;margin-top:5px;
+  box-shadow:0 0 8px #00ffff;
+}
+.info-text{
+  font-family:'Rajdhani',sans-serif;
+  font-size:clamp(12px,1.4vw,15px);
+  color:#a8c8d8;line-height:1.6;font-weight:600;
+}
+
+/* accent colors per section */
+.s-purple .section-badge,.s-purple .section-title{color:#c084fc;}
+.s-purple .section-title{text-shadow:0 0 20px #c084fc55;}
+.s-purple .section-badge{border-color:#c084fc44;background:#c084fc11;}
+.s-purple .info-dot{background:#c084fc;box-shadow:0 0 8px #c084fc;}
+.s-purple .divider{background:linear-gradient(90deg,#c084fc44,transparent);}
+.s-purple::before{background:linear-gradient(90deg,transparent,#c084fc88,transparent);}
+.s-purple{border-color:rgba(192,132,252,0.2);box-shadow:0 0 60px rgba(192,132,252,0.08),inset 0 1px 0 rgba(192,132,252,0.1);}
+
+.s-orange .section-badge,.s-orange .section-title{color:#fb923c;}
+.s-orange .section-title{text-shadow:0 0 20px #fb923c55;}
+.s-orange .section-badge{border-color:#fb923c44;background:#fb923c11;}
+.s-orange .info-dot{background:#fb923c;box-shadow:0 0 8px #fb923c;}
+.s-orange .divider{background:linear-gradient(90deg,#fb923c44,transparent);}
+.s-orange::before{background:linear-gradient(90deg,transparent,#fb923c88,transparent);}
+.s-orange{border-color:rgba(251,146,60,0.2);box-shadow:0 0 60px rgba(251,146,60,0.08),inset 0 1px 0 rgba(251,146,60,0.1);}
+
+.s-green .section-badge,.s-green .section-title{color:#4ade80;}
+.s-green .section-title{text-shadow:0 0 20px #4ade8055;}
+.s-green .section-badge{border-color:#4ade8044;background:#4ade8011;}
+.s-green .info-dot{background:#4ade80;box-shadow:0 0 8px #4ade80;}
+.s-green .divider{background:linear-gradient(90deg,#4ade8044,transparent);}
+.s-green::before{background:linear-gradient(90deg,transparent,#4ade8088,transparent);}
+.s-green{border-color:rgba(74,222,128,0.2);box-shadow:0 0 60px rgba(74,222,128,0.08),inset 0 1px 0 rgba(74,222,128,0.1);}
+
+.s-gold .section-badge,.s-gold .section-title{color:#fbbf24;}
+.s-gold .section-title{text-shadow:0 0 20px #fbbf2455;}
+.s-gold .section-badge{border-color:#fbbf2444;background:#fbbf2411;}
+.s-gold .info-dot{background:#fbbf24;box-shadow:0 0 8px #fbbf24;}
+.s-gold .divider{background:linear-gradient(90deg,#fbbf2444,transparent);}
+.s-gold::before{background:linear-gradient(90deg,transparent,#fbbf2488,transparent);}
+.s-gold{border-color:rgba(251,191,36,0.2);box-shadow:0 0 60px rgba(251,191,36,0.08),inset 0 1px 0 rgba(251,191,36,0.1);}
+
+/* TWO COLUMN SECTION */
+.twin-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media(max-width:600px){.twin-cols{grid-template-columns:1fr;}}
+.twin-col-header{
+  font-family:'Orbitron',monospace;font-size:13px;font-weight:700;
+  letter-spacing:3px;padding:8px 0 12px;margin-bottom:12px;
+  border-bottom:1px solid;
+}
+
+/* ── BOTTOM NAV ── */
+#bottom-nav{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  z-index:50;display:flex;gap:16px;align-items:center;
+}
+.nav-btn{
+  padding:10px 28px;
+  font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;
+  color:#00ffff88;background:transparent;
+  border:1px solid #00ffff33;border-radius:30px;
+  cursor:pointer;transition:all 0.3s;
+}
+.nav-btn:hover{color:#00ffff;border-color:#00ffff88;box-shadow:0 0 20px #00ffff33;}
+.nav-btn.primary{
+  color:#00ffff;border-color:#00ffff88;
+  box-shadow:0 0 20px #00ffff33;
+}
+.nav-hint{
+  font-family:'Space Mono',monospace;
+  font-size:9px;color:#334455;letter-spacing:3px;text-align:center;
+}
+
+/* ── SECTION COUNTER ── */
+#counter{
+  position:fixed;top:24px;right:32px;z-index:50;
+  font-family:'Orbitron',monospace;font-size:11px;
+  color:#00ffff55;letter-spacing:3px;
+}
+
+/* ── LOGO TOP LEFT ── */
+#logo-top{
+  position:fixed;top:20px;left:28px;z-index:50;
+  font-family:'Orbitron',monospace;font-size:13px;
+  font-weight:900;color:#00ffff;letter-spacing:4px;
+  text-shadow:0 0 14px #00ffff88;
+  display:none;
+}
+
+/* ── MASCOT ── */
+.mascot{font-size:clamp(40px,6vw,70px);animation:mascotFloat 3s ease-in-out infinite;display:inline-block;}
+@keyframes mascotFloat{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-16px) rotate(3deg);}}
+
+/* ── PROGRESS BAR ── */
+#progress-bar{
+  position:fixed;top:0;left:0;height:2px;
+  background:linear-gradient(90deg,#00ffff,#c084fc,#fbbf24);
+  transition:width 0.6s cubic-bezier(0.16,1,0.3,1);
+  z-index:100;box-shadow:0 0 8px #00ffff;
+}
+
+/* ── SCROLL HINT ── */
+.scroll-hint{
+  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  font-family:'Orbitron',monospace;font-size:9px;
+  color:#00ffff44;letter-spacing:4px;
+  animation:fadeUpDown 2s ease-in-out infinite;
+}
+@keyframes fadeUpDown{0%,100%{opacity:0.3;transform:translateX(-50%) translateY(0);}50%{opacity:0.8;transform:translateX(-50%) translateY(-6px);}}
+</style>
+</head>
+<body>
+
+<!-- THREE.JS BACKGROUND -->
+<canvas id="canvas-bg"></canvas>
+
+<!-- LIGHTNING -->
+<canvas id="lightning-canvas"></canvas>
+
+<!-- FLASH -->
+<div id="flash"></div>
+
+<!-- PROGRESS -->
+<div id="progress-bar" style="width:0%"></div>
+
+<!-- LOGO -->
+<div id="logo-top">CLB TIN HỌC</div>
+
+<!-- COUNTER -->
+<div id="counter">01 / 06</div>
+
+<!-- NAV DOTS -->
+<div id="nav-dots">
+  <div class="ndot active" data-scene="0"></div>
+  <div class="ndot" data-scene="1"></div>
+  <div class="ndot" data-scene="2"></div>
+  <div class="ndot" data-scene="3"></div>
+  <div class="ndot" data-scene="4"></div>
+  <div class="ndot" data-scene="5"></div>
+</div>
+
+<!-- ══════════════════════════════ -->
+<!-- SCENE 0 — INTRO               -->
+<!-- ══════════════════════════════ -->
+<div id="s0" class="scene active">
+  <div style="text-align:center;padding:20px;">
+    <div class="mascot">🤖</div>
+    <div style="margin-top:20px" class="hero-logo">CLB TIN HỌC</div>
+    <div class="hero-sub">ĐỊNH HƯỚNG HOẠT ĐỘNG THỰC TẾ</div>
+    <div style="margin-top:6px;font-family:'Space Mono',monospace;font-size:11px;color:#00ffff33;letter-spacing:3px;">
+      KHOA CÔNG NGHỆ THÔNG TIN
+    </div>
+    <button class="start-btn" onclick="goNext()">KHÁM PHÁ NGAY ▶</button>
+    <div style="margin-top:20px;font-family:'Space Mono',monospace;font-size:9px;color:#334;letter-spacing:3px;">
+      ENTER / → để tiếp tục · ← để quay lại
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ -->
+<!-- SCENE 1 — MÔ HÌNH             -->
+<!-- ══════════════════════════════ -->
+<div id="s1" class="scene">
+  <div class="scene-card">
+    <div class="section-badge">01 — MÔ HÌNH HOẠT ĐỘNG</div>
+    <div class="section-title">🌐 Mô Hình CLB Tin Học</div>
+    <div class="section-sub">Định hướng phát triển toàn diện</div>
+    <div class="divider"></div>
+    <div class="info-grid two-col">
+      <div class="info-item"><div class="info-dot"></div><div class="info-text">Học tập & trao đổi kiến thức chuyên ngành</div></div>
+      <div class="info-item"><div class="info-dot"></div><div class="info-text">Bồi dưỡng kỹ năng thực tế</div></div>
+      <div class="info-item"><div class="info-dot"></div><div class="info-text">Thực hiện các dự án học tập & nghiên cứu</div></div>
+      <div class="info-item"><div class="info-dot"></div><div class="info-text">Hỗ trợ kỹ thuật cho doanh nghiệp & cộng đồng</div></div>
+    </div>
+    <div style="margin-top:20px;padding:14px 18px;background:#00ffff08;border:1px solid #00ffff22;border-radius:12px;">
+      <div style="font-family:'Orbitron',monospace;font-size:10px;color:#00ffff88;letter-spacing:3px;margin-bottom:10px;">THÀNH VIÊN SẼ CÓ CƠ HỘI</div>
+      <div class="info-grid two-col">
+        <div class="info-item"><div class="info-dot"></div><div class="info-text">Tiếp xúc môi trường làm việc thực tế</div></div>
+        <div class="info-item"><div class="info-dot"></div><div class="info-text">Rèn luyện kỹ năng nghề nghiệp</div></div>
+        <div class="info-item"><div class="info-dot"></div><div class="info-text">Phát triển kỹ năng giao tiếp & nhóm</div></div>
+        <div class="info-item"><div class="info-dot"></div><div class="info-text">Tham gia hoạt động học thuật & kỹ thuật</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ -->
+<!-- SCENE 2 — PHẦN MỀM            -->
+<!-- ══════════════════════════════ -->
+<div id="s2" class="scene">
+  <div class="scene-card s-purple">
+    <div class="section-badge">02 — ĐỊNH HƯỚNG</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;">
+      <span style="font-size:48px;animation:mascotFloat 2.5s ease-in-out infinite;display:inline-block;">💻</span>
+      <div>
+        <div class="section-title">Mảng Phần Mềm</div>
+        <div class="section-sub">Software Development & Support</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="twin-cols">
+      <div>
+        <div class="twin-col-header" style="color:#c084fc;border-color:#c084fc44;">THÀNH VIÊN ĐƯỢC</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Bồi dưỡng kiến thức & kỹ năng chuyên ngành</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Tham gia các dự án nhóm</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Tiếp cận quy trình làm việc thực tế</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Tiếp xúc môi trường doanh nghiệp</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="twin-col-header" style="color:#c084fc;border-color:#c084fc44;">HOẠT ĐỘNG</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Thiết kế Website & Landing Page</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Hỗ trợ cài đặt & hướng dẫn phần mềm</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Xử lý lỗi kỹ thuật cơ bản</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Dự án nghiên cứu & khởi nghiệp</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ -->
+<!-- SCENE 3 — PHẦN CỨNG           -->
+<!-- ══════════════════════════════ -->
+<div id="s3" class="scene">
+  <div class="scene-card s-orange">
+    <div class="section-badge">03 — ĐỊNH HƯỚNG</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px;">
+      <span style="font-size:48px;animation:mascotFloat 2s ease-in-out infinite;display:inline-block;">⚙️</span>
+      <div>
+        <div class="section-title">Mảng Phần Cứng</div>
+        <div class="section-sub">Hardware Engineering & Networks</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="twin-cols">
+      <div>
+        <div class="twin-col-header" style="color:#fb923c;border-color:#fb923c44;">THÀNH VIÊN ĐƯỢC</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Kiến thức lắp ráp & cài đặt thiết bị</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Thiết kế & lắp đặt hệ thống mạng</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Rèn kỹ năng kỹ thuật thực tế</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Tiếp xúc môi trường doanh nghiệp</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="twin-col-header" style="color:#fb923c;border-color:#fb923c44;">HOẠT ĐỘNG</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Lắp ráp, cài đặt & bảo trì thiết bị</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Hỗ trợ kỹ thuật doanh nghiệp & trường</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Triển khai hệ thống kỹ thuật cơ bản</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Dự án nghiên cứu khoa học & khởi nghiệp</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ -->
+<!-- SCENE 4 — HÌNH THỨC           -->
+<!-- ══════════════════════════════ -->
+<div id="s4" class="scene">
+  <div class="scene-card s-green">
+    <div class="section-badge">04 — HÌNH THỨC HOẠT ĐỘNG</div>
+    <div class="section-title">📅 Sinh Hoạt & Phát Triển</div>
+    <div class="section-sub">Ba trụ cột của CLB</div>
+    <div class="divider"></div>
+    <div class="info-grid" style="grid-template-columns:1fr 1fr 1fr;gap:14px;">
+      <div style="padding:18px;background:#4ade8008;border:1px solid #4ade8022;border-radius:12px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:10px;">🗓️</div>
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:#4ade80;letter-spacing:2px;margin-bottom:10px;">SINH HOẠT ĐỊNH KỲ</div>
+        <div class="info-grid">
+          <div class="info-item" style="justify-content:center;"><div class="info-dot"></div><div class="info-text" style="font-size:12px;">Tập huấn & chuyên đề định kỳ</div></div>
+          <div class="info-item" style="justify-content:center;"><div class="info-dot"></div><div class="info-text" style="font-size:12px;">Chia sẻ kinh nghiệm thực tế</div></div>
+        </div>
+      </div>
+      <div style="padding:18px;background:#4ade8008;border:1px solid #4ade8022;border-radius:12px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:10px;">🎓</div>
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:#4ade80;letter-spacing:2px;margin-bottom:10px;">ĐÀO TẠO NỘI BỘ</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-dot"></div><div class="info-text" style="font-size:12px;">Mentor hướng dẫn thành viên mới</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text" style="font-size:12px;">Kết nối giảng viên & doanh nghiệp</div></div>
+        </div>
+      </div>
+      <div style="padding:18px;background:#4ade8008;border:1px solid #4ade8022;border-radius:12px;text-align:center;">
+        <div style="font-size:28px;margin-bottom:10px;">🚀</div>
+        <div style="font-family:'Orbitron',monospace;font-size:10px;color:#4ade80;letter-spacing:2px;margin-bottom:10px;">DỰ ÁN THỰC TẾ</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-dot"></div><div class="info-text" style="font-size:12px;">Dự án Đoàn – Hội & cộng đồng</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text" style="font-size:12px;">Khởi nghiệp & ứng dụng công nghệ</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════ -->
+<!-- SCENE 5 — MỤC TIÊU & KẾT      -->
+<!-- ══════════════════════════════ -->
+<div id="s5" class="scene">
+  <div class="scene-card s-gold">
+    <div class="section-badge">05 — MỤC TIÊU & THÀNH VIÊN NÒNG CỐT</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+      <span style="font-size:40px;display:inline-block;animation:mascotFloat 2.8s ease-in-out infinite;">🏆</span>
+      <div class="section-title">Mục Tiêu Phát Triển</div>
+    </div>
+    <div class="section-sub">Hướng đến tương lai công nghệ</div>
+    <div class="divider"></div>
+    <div class="twin-cols">
+      <div>
+        <div class="twin-col-header" style="color:#fbbf24;border-color:#fbbf2444;">MỤC TIÊU CLB</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Môi trường học tập năng động & thực tế</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Nâng cao kỹ năng chuyên môn & nghề nghiệp</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Tạo cơ hội tiếp xúc môi trường thực tế</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Kết nối SV, cựu SV, giảng viên & doanh nghiệp</div></div>
+        </div>
+      </div>
+      <div>
+        <div class="twin-col-header" style="color:#fbbf24;border-color:#fbbf2444;">THÀNH VIÊN NÒNG CỐT</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Có tinh thần trách nhiệm & đam mê công nghệ</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Hỗ trợ tổ chức các hoạt động CLB</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Hướng dẫn & đồng hành thành viên mới</div></div>
+          <div class="info-item"><div class="info-dot"></div><div class="info-text">Góp phần xây dựng & phát triển CLB</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:20px;text-align:center;padding:16px;background:linear-gradient(135deg,#fbbf2411,#fbbf2406);border:1px solid #fbbf2433;border-radius:12px;">
+      <div style="font-family:'Orbitron',monospace;font-size:11px;color:#fbbf24;letter-spacing:4px;margin-bottom:8px;">✦ THAM GIA CLB TIN HỌC ✦</div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:14px;color:#a89060;line-height:1.6;">
+        Xây dựng đội ngũ sinh viên có kiến thức, kỹ năng và tinh thần học hỏi không ngừng
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div id="bottom-nav">
+  <button class="nav-btn" id="btn-prev" onclick="goPrev()">◀ PREV</button>
+  <div class="nav-hint">ENTER / ARROW KEYS</div>
+  <button class="nav-btn primary" id="btn-next" onclick="goNext()">NEXT ▶</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// THREE.JS — 3D BACKGROUND WORLD
+// ═══════════════════════════════════════════
+const canvas3d = document.getElementById('canvas-bg');
+const renderer = new THREE.WebGLRenderer({canvas:canvas3d, antialias:true, alpha:false});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled = false;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x010510);
+scene.fog = new THREE.FogExp2(0x010510, 0.008);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 500);
+camera.position.set(0, 0, 30);
+
+// Lights
+const ambL = new THREE.AmbientLight(0x112244, 1.5);
+scene.add(ambL);
+const dirL = new THREE.DirectionalLight(0x4488ff, 2);
+dirL.position.set(10,20,10);
+scene.add(dirL);
+const ptL1 = new THREE.PointLight(0x00ffff, 4, 60);
+ptL1.position.set(0,10,0);
+scene.add(ptL1);
+const ptL2 = new THREE.PointLight(0xc084fc, 3, 50);
+ptL2.position.set(-20,-5,-10);
+scene.add(ptL2);
+
+// ── STARS ──
+const starGeo = new THREE.BufferGeometry();
+const starCount = 2000;
+const starPos = new Float32Array(starCount*3);
+for(let i=0;i<starCount;i++){
+  starPos[i*3]   = (Math.random()-0.5)*400;
+  starPos[i*3+1] = (Math.random()-0.5)*200;
+  starPos[i*3+2] = (Math.random()-0.5)*400;
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos,3));
+const starMat = new THREE.PointsMaterial({color:0xffffff,size:0.25,transparent:true,opacity:0.7,sizeAttenuation:true});
+scene.add(new THREE.Points(starGeo,starMat));
+
+// ── FLOATING PARTICLES ──
+const partGeo = new THREE.BufferGeometry();
+const partCount = 300;
+const partPos = new Float32Array(partCount*3);
+const partVel = new Float32Array(partCount*3);
+for(let i=0;i<partCount;i++){
+  partPos[i*3]   = (Math.random()-0.5)*80;
+  partPos[i*3+1] = (Math.random()-0.5)*40;
+  partPos[i*3+2] = (Math.random()-0.5)*60;
+  partVel[i*3]   = (Math.random()-0.5)*0.01;
+  partVel[i*3+1] = (Math.random()*0.005+0.002);
+  partVel[i*3+2] = (Math.random()-0.5)*0.008;
+}
+partGeo.setAttribute('position', new THREE.BufferAttribute(partPos,3));
+const partMat = new THREE.PointsMaterial({color:0x44aaff,size:0.12,transparent:true,opacity:0.5,sizeAttenuation:true});
+const particles = new THREE.Points(partGeo,partMat);
+scene.add(particles);
+
+// ── FLOATING 3D SHAPES ──
+const shapes3d = [];
+function makeShape(geo, mat, x,y,z, rx,ry){
+  const m = new THREE.Mesh(geo,mat);
+  m.position.set(x,y,z);
+  m.rotation.set(rx,ry,0);
+  m.userData = {
+    rx: (Math.random()-0.5)*0.008,
+    ry: (Math.random()-0.5)*0.012,
+    fy: Math.random()*0.6+0.3,
+    fp: Math.random()*Math.PI*2,
+    baseY: y
+  };
+  scene.add(m);
+  shapes3d.push(m);
+  return m;
+}
+
+// Torus rings
+const torusMat1 = new THREE.MeshStandardMaterial({color:0x00ffff,emissive:0x004455,metalness:0.8,roughness:0.1,wireframe:false});
+const torusMat2 = new THREE.MeshStandardMaterial({color:0xc084fc,emissive:0x220044,metalness:0.8,roughness:0.1});
+const torusMat3 = new THREE.MeshStandardMaterial({color:0xfbbf24,emissive:0x442200,metalness:0.8,roughness:0.1});
+const torusMat4 = new THREE.MeshStandardMaterial({color:0x4ade80,emissive:0x002211,metalness:0.8,roughness:0.1});
+
+makeShape(new THREE.TorusGeometry(4,0.3,8,40), torusMat1, -22, 5,-15, 0.8,0.3);
+makeShape(new THREE.TorusGeometry(3,0.25,8,32), torusMat2, 25, 3,-20, 1.2,0.5);
+makeShape(new THREE.TorusGeometry(2.5,0.2,8,32), torusMat3, 18,-5,-30, 0.5,1.0);
+
+// Octahedrons (gems)
+const gemMat = (c,e) => new THREE.MeshStandardMaterial({color:c,emissive:e,emissiveIntensity:1.5,metalness:0.9,roughness:0.05});
+makeShape(new THREE.OctahedronGeometry(1.8), gemMat(0x00ffff,0x003344), -15, 8,-20, 0,0.5);
+makeShape(new THREE.OctahedronGeometry(1.4), gemMat(0xc084fc,0x220033), 20, 10,-25, 0.5,0);
+makeShape(new THREE.OctahedronGeometry(1.0), gemMat(0xfbbf24,0x332200), 8,-8,-18, 0.3,0.8);
+makeShape(new THREE.OctahedronGeometry(0.8), gemMat(0x4ade80,0x002211), -10,-6,-22, 0.7,0.2);
+
+// Icosahedrons
+makeShape(new THREE.IcosahedronGeometry(2.5,0), new THREE.MeshStandardMaterial({color:0x0044ff,emissive:0x001144,wireframe:true,opacity:0.4,transparent:true}), 0, 15,-40, 0,0);
+makeShape(new THREE.IcosahedronGeometry(1.5,0), new THREE.MeshStandardMaterial({color:0xff6600,emissive:0x441100,wireframe:true,opacity:0.4,transparent:true}), -30, 0,-35, 0,0);
+
+// Cubes
+makeShape(new THREE.BoxGeometry(2,2,2), new THREE.MeshStandardMaterial({color:0x0088ff,emissive:0x002244,metalness:0.9,roughness:0.1}), 30, 8,-30, 0.3,0.5);
+makeShape(new THREE.BoxGeometry(1.5,1.5,1.5), new THREE.MeshStandardMaterial({color:0xff4488,emissive:0x220011,metalness:0.9,roughness:0.1}), -28,-8,-25, 0.7,0.3);
+
+// ── GRID FLOOR ──
+const gridHelper = new THREE.GridHelper(200,40,0x0a1a30,0x0a1a30);
+gridHelper.position.y = -15;
+scene.add(gridHelper);
+
+// ── ROCKETS (tên lửa) ──
+const rockets = [];
+function createRocket(){
+  const g = new THREE.Group();
+  // Body
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.18,0.28,1.2,8),
+    new THREE.MeshStandardMaterial({color:0xdddddd,metalness:0.9,roughness:0.1,emissive:0x111111})
+  );
+  g.add(body);
+  // Nose cone
+  const nose = new THREE.Mesh(
+    new THREE.ConeGeometry(0.18,0.6,8),
+    new THREE.MeshStandardMaterial({color:0xff3300,metalness:0.7,roughness:0.2,emissive:0x220000})
+  );
+  nose.position.y = 0.9;
+  g.add(nose);
+  // Fins
+  for(let i=0;i<4;i++){
+    const fin = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5,0.4,0.06),
+      new THREE.MeshStandardMaterial({color:0xaaaaaa,metalness:0.8,roughness:0.2})
+    );
+    fin.position.y = -0.5;
+    fin.rotation.y = i*Math.PI/2;
+    fin.position.x = Math.cos(i*Math.PI/2)*0.26;
+    fin.position.z = Math.sin(i*Math.PI/2)*0.26;
+    g.add(fin);
+  }
+  // Flame
+  const flame = new THREE.Mesh(
+    new THREE.ConeGeometry(0.12,0.5,8),
+    new THREE.MeshStandardMaterial({color:0xff8800,emissive:0xff4400,emissiveIntensity:3,transparent:true,opacity:0.9})
+  );
+  flame.position.y = -0.85;
+  flame.rotation.z = Math.PI;
+  g.add(flame);
+  g.userData.flame = flame;
+
+  // Random start
+  const ang = Math.random()*Math.PI*2;
+  const rad = 30+Math.random()*20;
+  g.position.set(Math.cos(ang)*rad, -20+Math.random()*10, Math.sin(ang)*rad-20);
+  g.userData.speed = 0.06+Math.random()*0.06;
+  g.userData.wobble = Math.random()*Math.PI*2;
+  // Tilt rocket upward
+  g.rotation.x = -0.3;
+  g.rotation.z = (Math.random()-0.5)*0.4;
+  scene.add(g);
+  rockets.push(g);
+}
+for(let i=0;i<8;i++) createRocket();
+
+// ── MASCOTS (3D floating emoji-like creatures) ──
+const mascots3D = [];
+function createMascot3D(color, x, y, z){
+  const g = new THREE.Group();
+  // Head/body
+  const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.9,12,12),
+    new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:0.5,metalness:0.3,roughness:0.5})
+  );
+  g.add(head);
+  // Eyes
+  [[-0.32,0.2,0.78],[0.32,0.2,0.78]].forEach(([ex,ey,ez])=>{
+    const eye = new THREE.Mesh(
+      new THREE.SphereGeometry(0.14,8,8),
+      new THREE.MeshStandardMaterial({color:0xffffff,emissive:0x88aaff,emissiveIntensity:2})
+    );
+    eye.position.set(ex,ey,ez);
+    g.add(eye);
+  });
+  // Antenna
+  const ant = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03,0.03,0.8,6),
+    new THREE.MeshStandardMaterial({color:0xaaaaaa,metalness:0.9})
+  );
+  ant.position.set(0,1.1,0);
+  g.add(ant);
+  const antTip = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1,8,8),
+    new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:3})
+  );
+  antTip.position.set(0,1.55,0);
+  g.add(antTip);
+
+  g.position.set(x,y,z);
+  g.userData = {phase:Math.random()*Math.PI*2, baseY:y, speed:0.4+Math.random()*0.4};
+  scene.add(g);
+  mascots3D.push(g);
+}
+createMascot3D(0x00ffff, -18, 5,-15);
+createMascot3D(0xc084fc, 18, 3,-20);
+createMascot3D(0xfbbf24, -5, 8,-35);
+createMascot3D(0x4ade80, 12,-3,-28);
+
+// ── LIGHTNING BOLT SHAPES ──
+const lightningShapes = [];
+function makeLightningMesh(){
+  const pts = [];
+  let y = 8, x = 0;
+  for(let i=0;i<12;i++){
+    pts.push(new THREE.Vector3(x,y,0));
+    x += (Math.random()-0.5)*2.5;
+    y -= 1.5;
+  }
+  const geo = new THREE.BufferGeometry().setFromPoints(pts);
+  const mat = new THREE.LineBasicMaterial({color:0xffff88,transparent:true,opacity:0.0});
+  const line = new THREE.Line(geo,mat);
+  line.userData = {alive:false, timer:0};
+  return line;
+}
+for(let i=0;i<6;i++){
+  const l = makeLightningMesh();
+  l.position.set((Math.random()-0.5)*40, 0, (Math.random()-0.5)*30-15);
+  scene.add(l);
+  lightningShapes.push(l);
+}
+
+// ── LIGHTNING CANVAS (2D overlay) ──
+const lcv = document.getElementById('lightning-canvas');
+const lctx = lcv.getContext('2d');
+lcv.width = window.innerWidth; lcv.height = window.innerHeight;
+let lightningStrikes = [];
+
+function drawLightningStrike(x1,y1,x2,y2,alpha,w){
+  lctx.save();
+  lctx.strokeStyle = `rgba(200,240,255,${alpha})`;
+  lctx.lineWidth = w;
+  lctx.shadowBlur = 18;
+  lctx.shadowColor = `rgba(150,200,255,${alpha})`;
+  lctx.beginPath();
+  lctx.moveTo(x1,y1);
+  const segments = 8;
+  let cx=x1,cy=y1;
+  for(let i=0;i<segments;i++){
+    const t=(i+1)/segments;
+    const nx=x1+(x2-x1)*t+(Math.random()-0.5)*40;
+    const ny=y1+(y2-y1)*t+(Math.random()-0.5)*10;
+    lctx.lineTo(nx,ny);
+    cx=nx;cy=ny;
+  }
+  lctx.stroke();
+  lctx.restore();
+}
+
+function spawnLightning(){
+  lightningStrikes.push({
+    x1:Math.random()*lcv.width, y1:0,
+    x2:Math.random()*lcv.width, y2:lcv.height*0.4,
+    alpha:0.9, life:20,
+    w: Math.random()*2+0.5
+  });
+  // Also flash 3D shapes
+  const idx = Math.floor(Math.random()*lightningShapes.length);
+  const ls = lightningShapes[idx];
+  ls.position.set((Math.random()-0.5)*40,0,(Math.random()-0.5)*30-15);
+  ls.material.opacity = 1.0;
+  ls.userData.alive = true;
+  ls.userData.timer = 12;
+}
+setInterval(spawnLightning, 1200+Math.random()*800);
+
+// ── CAMERA PATHS per scene ──
+const camPaths = [
+  {pos:[0,2,30],  look:[0,0,0]},
+  {pos:[-5,4,22], look:[0,1,-5]},
+  {pos:[6,6,18],  look:[2,2,-8]},
+  {pos:[-6,2,20], look:[-2,0,-5]},
+  {pos:[4,8,16],  look:[0,4,-6]},
+  {pos:[0,3,22],  look:[0,1,-4]},
+];
+
+// ── ACCENT LIGHTS per scene ──
+const sceneColors = [0x00ffff, 0x00ffff, 0xc084fc, 0xfb923c, 0x4ade80, 0xfbbf24];
+
+// ══════════════════════════════
+// SCENE MANAGER
+// ══════════════════════════════
+const TOTAL = 6;
+let current = 0;
+let isTransitioning = false;
+
+const sceneEls = Array.from({length:TOTAL},(_,i)=>document.getElementById('s'+i));
+const dots = document.querySelectorAll('.ndot');
+const counter = document.getElementById('counter');
+const progress = document.getElementById('progress-bar');
+const logoTop = document.getElementById('logo-top');
+const flash = document.getElementById('flash');
+
+function updateNav(){
+  dots.forEach((d,i)=>d.classList.toggle('active',i===current));
+  counter.textContent = String(current+1).padStart(2,'0')+' / '+String(TOTAL).padStart(2,'0');
+  progress.style.width = ((current/(TOTAL-1))*100)+'%';
+  logoTop.style.display = current===0?'none':'block';
+}
+
+function transitionTo(idx){
+  if(isTransitioning || idx===current || idx<0 || idx>=TOTAL) return;
+  isTransitioning = true;
+
+  const fromEl = sceneEls[current];
+  const toEl   = sceneEls[idx];
+  const col    = sceneColors[idx];
+  const camP   = camPaths[idx];
+
+  // Flash burst
+  gsap.to(flash, {opacity:1, duration:0.25, ease:'power2.in', onComplete:()=>{
+    // Swap scenes
+    fromEl.classList.remove('active');
+    toEl.classList.add('active');
+    current = idx;
+    updateNav();
+
+    // Animate in
+    gsap.fromTo(toEl, {opacity:0,scale:0.96}, {opacity:1,scale:1,duration:0.5,ease:'power2.out'});
+
+    // Fade flash out
+    gsap.to(flash, {opacity:0, duration:0.6, delay:0.05, ease:'power2.out'});
+
+    // Animate card items
+    const items = toEl.querySelectorAll('.info-item,.scene-card');
+    gsap.fromTo(items, {y:20,opacity:0}, {y:0,opacity:1,duration:0.5,stagger:0.05,ease:'power3.out',delay:0.1});
+
+    // Move camera
+    gsap.to(camera.position, {x:camP.pos[0],y:camP.pos[1],z:camP.pos[2], duration:1.8, ease:'power2.inOut'});
+    gsap.to(camTarget, {x:camP.look[0],y:camP.look[1],z:camP.look[2], duration:1.8, ease:'power2.inOut'});
+
+    // Change accent light
+    gsap.to(ptL1.color, {r:((col>>16)&255)/255, g:((col>>8)&255)/255, b:(col&255)/255, duration:1.2});
+
+    // 2D lightning burst
+    for(let i=0;i<3;i++){
+      setTimeout(()=>spawnLightning(), i*120);
+    }
+
+    setTimeout(()=>{ isTransitioning=false; }, 900);
+  }});
+}
+
+// Stagger-animate first scene
+setTimeout(()=>{
+  const items = sceneEls[0].querySelectorAll('button,.hero-logo,.hero-sub,.mascot');
+  gsap.fromTo(items, {y:30,opacity:0},{y:0,opacity:1,duration:0.8,stagger:0.12,ease:'power3.out'});
+},100);
+
+const camTarget = {x:0,y:0,z:0};
+const _look = new THREE.Vector3();
+
+function goNext(){ transitionTo(current+1); }
+function goPrev(){ transitionTo(current-1); }
+
+dots.forEach(d => d.addEventListener('click',()=>transitionTo(+d.dataset.scene)));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'||e.key==='ArrowRight'||e.key==='ArrowDown') goNext();
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp') goPrev();
+  const n=parseInt(e.key);
+  if(!isNaN(n)&&n>=1&&n<=TOTAL) transitionTo(n-1);
+});
+// Touch/swipe
+let touchX=0;
+document.addEventListener('touchstart',e=>{ touchX=e.touches[0].clientX; },{passive:true});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-touchX;
+  if(Math.abs(dx)>50){ if(dx<0) goNext(); else goPrev(); }
+},{passive:true});
+
+updateNav();
+
+// ══════════════════════════════
+// ANIMATE LOOP
+// ══════════════════════════════
+const clock = new THREE.Clock();
+
+function animate(){
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+  const dt = clock.getDelta();
+
+  // Camera gentle sway
+  camera.position.x += (camPaths[current].pos[0] + Math.sin(t*0.15)*0.6 - camera.position.x)*0.02;
+  camera.position.y += (camPaths[current].pos[1] + Math.sin(t*0.1)*0.3  - camera.position.y)*0.02;
+
+  _look.set(camTarget.x + Math.sin(t*0.12)*0.3, camTarget.y, camTarget.z);
+  camera.lookAt(_look);
+
+  // Floating shapes
+  shapes3d.forEach(s=>{
+    s.rotation.x += s.userData.rx;
+    s.rotation.y += s.userData.ry;
+    s.position.y  = s.userData.baseY + Math.sin(t*s.userData.fy + s.userData.fp)*1.2;
+  });
+
+  // Particles drift up
+  const pp = partGeo.attributes.position;
+  for(let i=0;i<partCount;i++){
+    pp.array[i*3]   += partVel[i*3];
+    pp.array[i*3+1] += partVel[i*3+1];
+    pp.array[i*3+2] += partVel[i*3+2];
+    if(pp.array[i*3+1]>20) pp.array[i*3+1]=-20;
+  }
+  pp.needsUpdate=true;
+
+  // Rockets fly upward + wobble
+  rockets.forEach((r,i)=>{
+    r.position.y += r.userData.speed;
+    r.position.x += Math.sin(t*0.5+i)*0.015;
+    if(r.position.y>22){
+      const ang=Math.random()*Math.PI*2;
+      const rad=25+Math.random()*20;
+      r.position.set(Math.cos(ang)*rad,-22+Math.random()*8,Math.sin(ang)*rad-20);
+    }
+    // Flame flicker
+    if(r.userData.flame){
+      r.userData.flame.material.emissiveIntensity = 2+Math.sin(t*15+i)*1.5;
+      r.userData.flame.scale.y = 0.8+Math.sin(t*20+i)*0.3;
+    }
+  });
+
+  // Mascots float & rotate
+  mascots3D.forEach((m,i)=>{
+    m.position.y = m.userData.baseY + Math.sin(t*m.userData.speed + m.userData.phase)*1.5;
+    m.rotation.y = t*0.3+i;
+  });
+
+  // Point light orbit
+  ptL1.position.x = Math.sin(t*0.3)*15;
+  ptL1.position.z = Math.cos(t*0.3)*15-10;
+  ptL2.position.x = Math.sin(t*0.2+2)*18;
+  ptL2.position.y = Math.sin(t*0.15)*6;
+
+  // 3D lightning shapes
+  lightningShapes.forEach(l=>{
+    if(l.userData.alive){
+      l.userData.timer--;
+      l.material.opacity *= 0.85;
+      if(l.userData.timer<=0){ l.material.opacity=0; l.userData.alive=false; }
+    }
+  });
+
+  // 2D lightning
+  lctx.clearRect(0,0,lcv.width,lcv.height);
+  lightningStrikes = lightningStrikes.filter(s=>{
+    s.life--;
+    s.alpha *= 0.8;
+    if(s.life>0){
+      drawLightningStrike(s.x1,s.y1,s.x2,s.y2,s.alpha,s.w);
+      // Branch
+      if(s.life>10) drawLightningStrike(s.x1+(s.x2-s.x1)*0.4,s.y1+(s.y2-s.y1)*0.4, s.x2+(Math.random()-0.5)*100,s.y2+20,s.alpha*0.5,s.w*0.5);
+      return true;
+    }
+    return false;
+  });
+
+  // Stars twinkle
+  starMat.opacity = 0.5+Math.sin(t*0.3)*0.2;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// Resize
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  lcv.width=window.innerWidth; lcv.height=window.innerHeight;
+});
+</script>
+</body>
+</html>
